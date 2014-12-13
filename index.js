@@ -1,7 +1,7 @@
 var LastFmNode = require('lastfm').LastFmNode;
 var mb = require('musicbrainz');
 var request = require('request');
-var config = require('config');
+var config = require('./config');
 
 var lastfm = new LastFmNode({
     api_key: config.api_key,
