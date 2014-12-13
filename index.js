@@ -2,14 +2,20 @@ var LastFmNode = require('lastfm').LastFmNode;
 var mb = require('musicbrainz');
 var request = require('request');
 var config = require('./config');
+var SpotifyWebApi = require('spotify-web-api-node');
 
 var lastfm = new LastFmNode({
     api_key: config.api_key,
     secret: config.secret
 });
 
+var spotify = new SpotifyWebApi({
+    clientId: config.spotify.clientId,
+    clientSecret: config.spotify.secret
+});
+
 lastfm.request('user.topTracks', {
-    limit: 20,
+    limit: 15,
     user: 'EsmuPliks',
     handlers: {
         success: handleTopTracks,
@@ -19,13 +25,47 @@ lastfm.request('user.topTracks', {
     }
 });
 
-function handleTopTracks(response) {
+function handleTopTracks(response, callback) {
     var tracksWithMbid = response.toptracks.track.filter(function (e) {
         return e.mbid;
     });
 
-    sortByMbid(tracksWithMbid, function (sortedTracks) {
-        console.log('   SORTED', sortedTracks);
+    sortByMbid(tracksWithMbid, function(tracks) {
+        createPlaylist(tracks, console.log);
+    });
+}
+
+function createPlaylist(tracks, callback) {
+    appendSpotifyUris(tracks, function() {
+        var playlist = 'spotify:trackset:Playlist:';
+        tracks.forEach(function(track) {
+            playlist += track.spotifyUri + ',';
+        });
+        callback(playlist);
+    });
+}
+
+function appendSpotifyUris(tracks, callback) {
+    trackCache = [];
+    function addResolved(track) {
+        trackCache.push(track);
+        if (trackCache.length === tracks.length) {
+            callback(trackCache.filter(function(track) {
+                return track.spotifyUri
+            }));
+        }
+    }
+
+    tracks.forEach(function(track) {
+        spotify.searchTracks('artist:' + track.artist.name + ' track:' + track.name)
+            .then(function(data) {
+                var item = data.tracks.items[0]
+                track.spotifyUri = item.id;
+                addResolved(track);
+            }, function(err) {
+                console.log('Failed getting spotify uri for ' + track.name);
+                addResolved(track);
+            });
     });
 }
 
