@@ -20,7 +20,6 @@ app.set('view engine', 'hbs');
 app.get('/user/:user', function(req, res) {
     var lastfmUsername = req.params.user;
     console.log('User: %s', lastfmUsername);
-
     User.findOne({"lastfm.username": lastfmUsername}, function (err, user) {
         if (err) {
             res.render('error', {
@@ -33,7 +32,17 @@ app.get('/user/:user', function(req, res) {
                 res.redirect(google.makeUserAuthUrl());
             } else {
                 console.log('Found authenticated user %s', user);
-                res.render('index');
+                google.fetchGoogleFitness(user, function (err, response) {
+                    if (!err) {
+                        console.log(response);
+                        res.render('index');
+                    } else {
+                        console.error(err);
+                        res.render('error', {
+                            error: 'Failed to fetch Google Fitness for ' + lastfmUsername + '; ' + JSON.stringify(err)
+                        });
+                    }
+                });
             }
         }
     });
