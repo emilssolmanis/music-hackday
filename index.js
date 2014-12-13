@@ -15,7 +15,7 @@ var spotify = new SpotifyWebApi({
 });
 
 lastfm.request('user.topTracks', {
-    limit: 15,
+    limit: 10,
     user: 'EsmuPliks',
     handlers: {
         success: handleTopTracks,
@@ -25,28 +25,27 @@ lastfm.request('user.topTracks', {
     }
 });
 
-function handleTopTracks(response, callback) {
+function handleTopTracks(response) {
     var tracksWithMbid = response.toptracks.track.filter(function (e) {
         return e.mbid;
     });
 
-    sortByMbid(tracksWithMbid, function(tracks) {
+    sortByBpm(tracksWithMbid, function(tracks) {
         createPlaylist(tracks, console.log);
     });
 }
 
 function createPlaylist(tracks, callback) {
     appendSpotifyUris(tracks, function() {
-        var playlist = 'spotify:trackset:Playlist:';
-        tracks.forEach(function(track) {
-            playlist += track.spotifyUri + ',';
-        });
+        var playlist = 'spotify:trackset:Playlist:' + tracks.map(function (t) {
+                return t.spotifyUri;
+            }).join(',');
         callback(playlist);
     });
 }
 
 function appendSpotifyUris(tracks, callback) {
-    trackCache = [];
+    var trackCache = [];
     function addResolved(track) {
         trackCache.push(track);
         if (trackCache.length === tracks.length) {
@@ -69,7 +68,7 @@ function appendSpotifyUris(tracks, callback) {
     });
 }
 
-function sortByMbid(tracks, callback) {
+function sortByBpm(tracks, callback) {
     var trackCache = [];
     function addResolved(track) {
         trackCache.push(track);
