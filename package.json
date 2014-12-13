@@ -1,0 +1,17 @@
+{
+  "name": "hackday",
+  "version": "1.0.0",
+  "description": "trololo my lololo",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "lastfm": "^0.9.2",
+    "musicbrainz": "^0.2.4",
+    "request": "^2.51.0",
+    "sax": "^0.6.1"
+  }
+}
