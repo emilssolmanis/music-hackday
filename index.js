@@ -52,7 +52,7 @@ if (!config.google.tempAuthCode) {
                     console.error('Error listing users datasources', err);
                 }
             });
-            //fetchLastfmTopTracks();
+            //fetchLastfmTopTracksSortedByBpm();
         } else {
             console.error('Failed to auth against Google stuff', err);
         }
@@ -68,12 +68,22 @@ if (!config.google.tempAuthCode) {
 
     fetchGoogleFitness(function (err, response) {
         if (!err) {
-            console.log(response);
+            var heartRate = response.point[0].value[0].fpVal * 2;
+            fetchLastfmTopTracksSortedByBpm(function (sortedTracks) {
+                var closestTrack = sortedTracks.map(function (track) {
+                    track.deltaBpm = Math.abs(track.bpm - heartRate);
+                    return track;
+                }).sort(function (a, b) {
+                    return b.deltaBpm - a.deltaBpm;
+                }).pop();
+                console.log('Closest to heartRate %s -- %s by %s @ %s', heartRate, closestTrack.name,
+                    closestTrack.artist.name, closestTrack.bpm)
+            });
         } else {
             console.error('Error listing users datasources', err);
         }
     });
-    //fetchLastfmTopTracks();
+    //fetchLastfmTopTracksSortedByBpm();
 }
 
 function fetchGoogleFitness(callback) {
@@ -84,12 +94,12 @@ function fetchGoogleFitness(callback) {
     }, callback);
 }
 
-function fetchLastfmTopTracks() {
+function fetchLastfmTopTracksSortedByBpm(callback) {
     lastfm.request('user.topTracks', {
         limit: 10,
-        user: 'EsmuPliks',
+        user: 'skmangal',
         handlers: {
-            success: handleTopTracks,
+            success: function(response) { handleTopTracks(response, callback); },
             error: function (error) {
                 console.error('Failed fetching from Last.fm API', error);
             }
@@ -97,14 +107,12 @@ function fetchLastfmTopTracks() {
     });
 }
 
-function handleTopTracks(response) {
+function handleTopTracks(response, callback) {
     var tracksWithMbid = response.toptracks.track.filter(function (e) {
         return e.mbid;
     });
 
-    sortByBpm(tracksWithMbid, function (tracks) {
-        createPlaylist(tracks, console.log);
-    });
+    sortByBpm(tracksWithMbid, callback);
 }
 
 function createPlaylist(tracks, callback) {
