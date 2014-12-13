@@ -20,10 +20,33 @@ lastfm.request('user.topTracks', {
 });
 
 function handleTopTracks(response) {
-    response.toptracks.track.filter(function(e) { return e.mbid; }).forEach(function (track) {
+    var tracksWithMbid = response.toptracks.track.filter(function (e) {
+        return e.mbid;
+    });
+
+    sortByMbid(tracksWithMbid, function (sortedTracks) {
+        console.log('   SORTED', sortedTracks);
+    });
+}
+
+function sortByMbid(tracks, callback) {
+    var trackCache = [];
+    function addResolved(track) {
+        trackCache.push(track);
+        if (trackCache.length === tracks.length) {
+            callback(trackCache.filter(function (t) {
+                return t.bpm;
+            }).sort(function (a, b) {
+                return a.bpm - b.bpm;
+            })
+        );
+        }
+    }
+
+    tracks.forEach(function (track) {
         mb.lookupRecording(track.mbid, [], function(err, release) {
             if (err) {
-                return;
+                addResolved(track);
             }
             request({
                 url: 'http://acousticbrainz.org/' + release.id + '/low-level',
@@ -31,10 +54,14 @@ function handleTopTracks(response) {
             }, function (error, response, body) {
                 if (!error && response.statusCode === 200) {
                     console.log('%s - %s: %s', track.artist.name, track.name, body.rhythm.bpm);
+                    track.bpm = body.rhythm.bpm;
+                    addResolved(track);
                 } else {
                     console.warn('Failed getting AcousticBrainz %s', track.name);
+                    addResolved(track);
                 }
             });
         })
     });
+
 }
