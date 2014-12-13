@@ -1,0 +1,35 @@
+<html>
+    <body>
+        <form action="/">
+            <label for="user">Last.fm user name:</label>
+            <input type="text" name="user" id="user" />
+            <input type="submit" />
+        </form>
+
+        <a href="{{uri}}">Open playlist</a>
+        <table>
+            <thead>
+                <tr>
+                    <td>
+                        Track
+                    </td>
+                    <td>
+                        bpm
+                    </td>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each tracks}}
+                    <tr>
+                        <td>
+                            {{artist.name}} - {{name}}
+                        </td>
+                        <td>
+                            {{bpm}}
+                        </td>
+                    </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </body>
+</html>
