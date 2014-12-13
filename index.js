@@ -1,5 +1,6 @@
 var LastFmNode = require('lastfm').LastFmNode;
 var mb = require('musicbrainz');
+var path = require('path');
 var request = require('request');
 var config = require('./config');
 var SpotifyWebApi = require('spotify-web-api-node');
@@ -102,6 +103,47 @@ function fetchLastfmTopTracksSortedByBpm(callback) {
             success: function(response) { handleTopTracks(response, callback); },
             error: function (error) {
                 console.error('Failed fetching from Last.fm API', error);
+            }
+        }
+    });
+}
+
+var express = require('express');
+var app = express();
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'hbs');
+
+app.get('/', function(req, res) {
+    var user = req.query.user;
+    if (user) {
+        generatePlaylist(user, function(playlist, error) {
+            if (error) {
+                res.render('error', { error: error });
+                return;
+            }
+            res.render('playlist', { tracks: playlist.tracks, uri: playlist.uri });
+        });
+    }
+    else {
+        res.render('index');
+    }
+});
+
+var server = app.listen(3000, function() {
+    console.log('running');
+});
+
+function generatePlaylist(user, callback) {
+    lastfm.request('user.topTracks', {
+        limit: 20,
+        user: user,
+        handlers: {
+            success: function(data) {
+                handleTopTracks(data, callback);
+            },
+            error: function(error) {
+                console.error('Failed fetching from Last.fm API', error);
+                callback(null, 'Failed fetching from Last.fm API');
             }
         }
     });
